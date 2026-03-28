@@ -18,6 +18,25 @@
         <img id="birthday-ribbon" class="birthday-ribbon" src="/pics/ribbon.png" alt="Ribbon">
       </div>
 
+      <!-- Birthday Countdown Overlay -->
+      <div id="countdown-overlay" class="countdown-overlay hidden">
+        <div class="countdown-title">Wait for the moment...</div>
+        <div id="countdown-timer" class="countdown-timer">
+          <div class="time-block"><span id="days">00</span><label>Days</label></div>
+          <div class="time-block"><span id="hours">00</span><label>Hours</label></div>
+          <div class="time-block"><span id="minutes">00</span><label>Mins</label></div>
+          <div class="time-block"><span id="seconds">00</span><label>Secs</label></div>
+        </div>
+      </div>
+
+      <!-- Intro Narration Overlay -->
+      <div id="intro-overlay" class="intro-overlay hidden">
+        <div class="intro-content">
+          <div id="intro-text" class="intro-text"></div>
+          <div id="intro-click-prompt" class="click-prompt hidden">Click to begin the journey...</div>
+        </div>
+      </div>
+
       <!-- The sticky container that holds the canvas -->
       <div class="canvas-container">
         <canvas id="hero-lightpass"></canvas>

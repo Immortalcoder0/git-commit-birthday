@@ -1,10 +1,11 @@
 import './style.css';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 import { FramePreloader } from './preloader';
 import { CanvasRenderer } from './renderer';
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
 const TOTAL_FRAMES = 960; // Configured based on user specs
 // Frame path format assumes frames are in public/frames/ named frame_0001.webp etc.
@@ -21,6 +22,112 @@ const renderer = new CanvasRenderer('hero-lightpass');
 // Object to hold the current frame index for GSAP to animate
 const playhead = { frame: 0 };
 
+// --- Birthday Countdown Logic ---
+const TARGET_DATE = new Date("2026-03-29T00:00:00+05:30").getTime();
+let countdownInterval: number | null = null;
+
+async function getServerTime(): Promise<number> {
+  try {
+    // Fetching from a reliable time API to prevent local clock cheating
+    const response = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
+    const data = await response.json();
+    return new Date(data.utc_datetime).getTime();
+  } catch (err) {
+    console.warn("Could not fetch server time, falling back to system time.", err);
+    return Date.now();
+  }
+}
+
+function updateCountdownDisplay(ms: number) {
+  const d = Math.floor(ms / (1000 * 60 * 60 * 24));
+  const h = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+  const s = Math.floor((ms % (1000 * 60)) / 1000);
+
+  const daysEl = document.getElementById('days');
+  const hoursEl = document.getElementById('hours');
+  const minsEl = document.getElementById('minutes');
+  const secsEl = document.getElementById('seconds');
+
+  if (daysEl) daysEl.innerText = d.toString().padStart(2, '0');
+  if (hoursEl) hoursEl.innerText = h.toString().padStart(2, '0');
+  if (minsEl) minsEl.innerText = m.toString().padStart(2, '0');
+  if (secsEl) secsEl.innerText = s.toString().padStart(2, '0');
+}
+
+async function startCountdownSequence() {
+  const overlay = document.getElementById('countdown-overlay');
+  if (!overlay) return;
+
+  overlay.classList.remove('hidden');
+  
+  const tick = async () => {
+    const now = await getServerTime();
+    const remaining = TARGET_DATE - now;
+
+    if (remaining <= 0) {
+      if (countdownInterval) clearInterval(countdownInterval);
+      unlockGallery();
+    } else {
+      updateCountdownDisplay(remaining);
+    }
+  };
+
+  await tick();
+  countdownInterval = window.setInterval(tick, 1000);
+}
+
+async function startIntroNarration() {
+  if (isIntroStarted) return;
+  isIntroStarted = true;
+
+  const introOverlay = document.getElementById('intro-overlay');
+  const introText = document.getElementById('intro-text');
+  const introPrompt = document.getElementById('intro-click-prompt');
+  
+  if (!introOverlay || !introText) return;
+
+  introOverlay.classList.remove('hidden');
+  gsap.fromTo(introOverlay, { opacity: 0 }, { opacity: 1, duration: 1.5 });
+
+  const script = "A quiet journey awaits.\n\nEnter the garden and let the circular path guide you. Move with the curve of the wood and stone. When you reach the clearing, turn inward and follow the path to the heart of the garden.";
+  
+  await typeWriter(script, introText, 50);
+  introPrompt?.classList.remove('hidden');
+
+  const finalUnlock = () => {
+    introOverlay.removeEventListener('click', finalUnlock);
+    gsap.to(introOverlay, {
+      opacity: 0,
+      duration: 1.5,
+      onComplete: () => {
+        introOverlay.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        ScrollTrigger.refresh();
+      }
+    });
+  };
+
+  introOverlay.addEventListener('click', finalUnlock);
+}
+
+function unlockGallery() {
+  const countdownOverlay = document.getElementById('countdown-overlay');
+  const wrap = document.getElementById('birthday-wrap');
+  
+  // Fade out existing overlays then start intro
+  gsap.to([countdownOverlay, wrap], {
+    opacity: 0,
+    duration: 1.5,
+    ease: "power2.inOut",
+    onComplete: () => {
+      if (countdownOverlay) countdownOverlay.style.display = 'none';
+      if (wrap) wrap.style.display = 'none';
+      startIntroNarration();
+    }
+  });
+}
+
 // --- Initial Birthday Wrap Logic ---
 document.body.style.overflow = 'hidden';
 const wrap = document.getElementById('birthday-wrap');
@@ -28,42 +135,29 @@ const wrapLeft = document.querySelector('.wrap-left');
 const wrapRight = document.querySelector('.wrap-right');
 const ribbon = document.querySelector('.birthday-ribbon');
 
+let isUnwrapping = false;
+let isIntroStarted = false;
+
 if (wrap && wrapLeft && wrapRight && ribbon) {
-  wrap.addEventListener('click', () => {
-    const tl = gsap.timeline({
-      onComplete: () => {
-        wrap.style.display = 'none';
-        document.body.style.overflow = 'auto';
-        ScrollTrigger.refresh();
-      }
-    });
+  wrap.addEventListener('click', async () => {
+    if (isUnwrapping) return;
+    isUnwrapping = true;
 
-    // Animate the ribbon out first
-    tl.to(ribbon, { 
-      opacity: 0, 
-      scale: 1.5, 
-      rotate: 5,
-      duration: 1, 
-      ease: "power2.in" 
-    });
+    // Check if we are already past the time immediately
+    const now = await getServerTime();
 
-    // Tear effect: Slide halves apart
-    tl.to(wrapLeft, { 
-      xPercent: -100, 
-      rotate: -10, 
-      duration: 2.5, 
-      ease: "power2.inOut" 
-    }, "-=0.5");
-
-    tl.to(wrapRight, { 
-      xPercent: 100, 
-      rotate: 10, 
-      duration: 2.5, 
-      ease: "power2.inOut" 
-    }, "<");
-
-    // Fade the entire container at the very end just in case
-    tl.to(wrap, { opacity: 0, duration: 0.5 }, "-=0.5");
+    if (now >= TARGET_DATE) {
+       // Just unwrap normally
+       const tl = gsap.timeline({ onComplete: unlockGallery });
+       tl.to(ribbon, { opacity: 0, scale: 1.5, rotate: 5, duration: 1, ease: "power2.in" });
+       tl.to(wrapLeft, { xPercent: -100, rotate: -10, duration: 2.5, ease: "power2.inOut" }, "-=0.5");
+       tl.to(wrapRight, { xPercent: 100, rotate: 10, duration: 2.5, ease: "power2.inOut" }, "<");
+    } else {
+       const tl = gsap.timeline({ onComplete: () => { startCountdownSequence(); } });
+       tl.to(ribbon, { opacity: 0, scale: 1.5, rotate: 5, duration: 1, ease: "power2.in" });
+       tl.to(wrapLeft, { xPercent: -100, rotate: -10, duration: 2.5, ease: "power2.inOut" }, "-=0.5");
+       tl.to(wrapRight, { xPercent: 100, rotate: 10, duration: 2.5, ease: "power2.inOut" }, "<");
+    }
   });
 }
 
@@ -675,6 +769,30 @@ async function startFinalNarration() {
       const readLettersBtn = document.getElementById("read-letters-btn");
       readLettersBtn?.classList.remove("hidden");
       gsap.fromTo(readLettersBtn, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 1, delay: 1 });
+
+      readLettersBtn?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        
+        // 1. Fade out the final scenes
+        gsap.to(["#final-scene", ".final-cta"], { 
+          opacity: 0, 
+          duration: 1, 
+          onComplete: () => {
+            document.getElementById("final-scene")?.classList.add("hidden");
+            document.querySelector(".final-cta")?.classList.add("hidden");
+          }
+        });
+
+        // 2. Scroll back to the original Station (Frame 192)
+        if (masterTl.scrollTrigger) {
+          const scrollPos = masterTl.scrollTrigger.labelToScroll("pauseStart");
+          gsap.to(window, {
+            scrollTo: scrollPos,
+            duration: 3,
+            ease: "power2.inOut"
+          });
+        }
+      });
     }
   };
 
