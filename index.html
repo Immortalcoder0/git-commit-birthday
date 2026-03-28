@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scroll Animated Experience</title>
+  </head>
+  <body>
+    <div id="app">
+      <!-- The sticky container that holds the canvas -->
+      <div class="canvas-container">
+        <canvas id="hero-lightpass"></canvas>
+      </div>
+      
+      <!-- The scrollable height container (GSAP will pin & scroll this) -->
+      <div id="scroll-content">
+        <section class="step step-1">
+          <h1>Welcome to the Experience</h1>
+        </section>
+        <section class="step step-2">
+          <h2>High Performance</h2>
+        </section>
+        <section class="step step-3">
+          <h2>Immersive Scroll</h2>
+        </section>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

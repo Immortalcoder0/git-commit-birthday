@@ -1,0 +1,69 @@
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #000000;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overscroll-behavior: none; /* Prevent bounce on Mac/iOS */
+}
+
+/* 
+  The canvas container is position fixed or sticky 
+  so it stays on screen while we scroll the body down 
+*/
+.canvas-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1; /* Behind the content */
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* This makes the canvas act like background-size: cover */
+  display: block;
+}
+
+#scroll-content {
+  position: relative;
+  z-index: 10;
+}
+
+.step {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh; /* each step is one viewport height for pacing */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  opacity: 0; 
+  text-align: center;
+}
+
+.step-1 {
+  opacity: 1; /* First one visible initially */
+}
+
+.step h1 {
+  font-size: 4rem;
+  margin: 0;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+}
+
+.step h2 {
+  font-size: 3rem;
+  margin: 0;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+}
