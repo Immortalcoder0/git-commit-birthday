@@ -7,6 +7,17 @@
   </head>
   <body>
     <div id="app">
+      <!-- Initial Birthday Wrap -->
+      <div id="birthday-wrap" class="birthday-wrap">
+        <div class="wrap-half wrap-left">
+          <img src="/pics/wrap.webp" alt="Wrap Left">
+        </div>
+        <div class="wrap-half wrap-right">
+          <img src="/pics/wrap.webp" alt="Wrap Right">
+        </div>
+        <img id="birthday-ribbon" class="birthday-ribbon" src="/pics/ribbon.png" alt="Ribbon">
+      </div>
+
       <!-- The sticky container that holds the canvas -->
       <div class="canvas-container">
         <canvas id="hero-lightpass"></canvas>
@@ -14,15 +25,118 @@
       
       <!-- The scrollable height container (GSAP will pin & scroll this) -->
       <div id="scroll-content">
-        <section class="step step-1">
-          <h1>Welcome to the Experience</h1>
-        </section>
-        <section class="step step-2">
-          <h2>High Performance</h2>
-        </section>
-        <section class="step step-3">
-          <h2>Immersive Scroll</h2>
-        </section>
+        <!-- New Interactive Pause Station -->
+        <div class="interactive-boxes">
+          <div class="box-container-relative">
+            <div id="box-1" class="clickable-box box-1"><img src="/pics/cover.png" alt="Box 1"></div>
+            <div id="box-2" class="clickable-box box-2"><img src="/pics/cover.png" alt="Box 2"></div>
+            <div id="box-3" class="clickable-box box-3"><img src="/pics/cover.png" alt="Box 3"></div>
+            <div id="box-4" class="clickable-box box-4"><img src="/pics/cover.png" alt="Box 4"></div>
+          </div>
+        </div>
+
+        <!-- Fullscreen Box Overlay (Frame 192) -->
+        <div id="box-overlay" class="box-overlay hidden">
+          <div class="overlay-close">×</div>
+          <div class="overlay-content">
+            <img id="overlay-img" src="/pics/cover.png" alt="Overlay Content">
+            <p id="overlay-text" class="hidden"></p>
+            
+            <!-- Box 3 Music Integration -->
+            <div id="overlay-music" class="music-container hidden">
+              <h2 class="music-heading">OUR songs</h2>
+              <!-- Selection Cards -->
+              <div id="song-selection" style="display: flex; gap: 50px;">
+                <div class="song-card" data-vid="kugYXtEpMeM">
+                  <div class="song-cover cover-1"></div>
+                  <p class="song-title">love me not</p>
+                </div>
+                <div class="song-card" data-vid="A8-IhZ627Fo">
+                  <div class="song-cover cover-2"></div>
+                  <p class="song-title">Hum tere pyaar me</p>
+                </div>
+              </div>
+              <!-- IFrame Embed Area -->
+              <div id="iframe-container" class="hidden">
+                <button id="back-to-songs">← Back to Songs</button>
+                <div id="player-frame-wrapper"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Gallery Overlay (Years/Photos) -->
+        <div class="gallery-overlay">
+          <h1 id="gallery-year">2020</h1>
+          <div id="gallery-container" class="gallery-photo-container">
+            <div id="gallery-photo-box" class="photo-box-placeholder"></div>
+            <div id="gallery-photo-box-2" class="photo-box-placeholder" style="display: none;"></div>
+          </div>
+        </div>
+
+        <!-- Final CTA Overlay (End Frame 959) -->
+        <div class="final-cta">
+          <div class="cta-wrapper">
+            <svg viewBox="0 0 500 500" class="circular-text-svg">
+              <defs>
+                <!-- Mask: A rotating wedge to reveal the pink layer -->
+                <mask id="highlightMask">
+                  <rect x="0" y="0" width="500" height="500" fill="black" />
+                  <!-- Rotating Wedge (A thick stroke arc is more stable for centering) -->
+                  <circle id="maskWedge" cx="250" cy="250" r="150" 
+                          fill="none" stroke="white" stroke-width="300" 
+                          stroke-dasharray="100 942" transform="rotate(0 250 250)" />
+                </mask>
+              </defs>
+              
+              <path id="circlePath" d="M 250, 250 m -150, 0 a 150,150 0 1,1 300,0 a 150,150 0 1,1 -300,0" fill="transparent" />
+              
+              <!-- Bottom Layer: Constant White -->
+              <text fill="white" opacity="0.9">
+                <textPath href="#circlePath">
+                  Are u ready Baby ? &nbsp; Are u ready Baby ? &nbsp; Are u ready Baby ?
+                </textPath>
+              </text>
+              
+              <!-- Top Layer: Pink (Revealed by Mask) -->
+              <text fill="#f199d1" mask="url(#highlightMask)">
+                <textPath href="#circlePath">
+                  Are u ready Baby ? &nbsp; Are u ready Baby ? &nbsp; Are u ready Baby ?
+                </textPath>
+              </text>
+            </svg>
+            <button id="final-yes-btn" class="yes-btn">Yes</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Immersive Story Overlay (Post-Yes Finale) -->
+      <div id="story-overlay" class="story-overlay hidden">
+        <div class="story-content">
+          <p id="story-text" class="story-text"></p>
+          <div id="story-footer" class="story-footer hidden">
+            <button id="sit-down-btn" class="sit-down-btn">Sit Down</button>
+          </div>
+          <div id="click-prompt" class="click-prompt hidden">(Click anywhere to continue)</div>
+        </div>
+      </div>
+
+      <!-- Cinematic Eye Reveal Finale -->
+      <div id="final-scene" class="final-scene hidden">
+        <video id="burning-video" class="burning-video" loop muted playsinline>
+          <source src="/pics/burning.mp4" type="video/mp4">
+        </video>
+        <video id="blowout-video" class="blowout-video hidden" muted playsinline>
+          <source src="/pics/blowout.mp4" type="video/mp4">
+        </video>
+        <img id="final-pic" class="final-pic hidden" src="/pics/withme.jpg" alt="With me">
+        <div id="final-speech-bubble" class="speech-bubble hidden">
+          <p id="final-speech-text">So... did you like the surprise? ❤️</p>
+        </div>
+        <button id="blowout-btn" class="blowout-btn hidden">Blow Out</button>
+        <button id="read-letters-btn" class="read-letters-btn hidden">Read the letters</button>
+        <div class="eyelid top"></div>
+        <div class="eyelid bottom"></div>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>

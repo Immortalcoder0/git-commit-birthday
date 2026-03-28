@@ -9,3 +9,6 @@ GSD-STYLE.md
 model_capabilities.yaml
 node_modules/
 frames/
+public/pics/*
+public/frames/
+.vercel

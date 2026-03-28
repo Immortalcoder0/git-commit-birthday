@@ -1,8 +1,19 @@
+@font-face {
+  font-family: 'Grained-Demo';
+  src: url('/fonts/Grained-Demo.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Grained-Demo', sans-serif !important;
   color-scheme: dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #000000;
+}
+
+* {
+  font-family: 'Grained-Demo', sans-serif !important;
 }
 
 html, body {
@@ -38,32 +49,833 @@ canvas {
   z-index: 10;
 }
 
-.step {
+/* Birthday Wrap Overlay with Tear Effect */
+.birthday-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2000;
+  background: transparent; /* Show gallery behind once torn */
+  display: flex;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.wrap-half {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wrap-half img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* Jagged Tearing Edges - Aligned to Ribbon Strap at 35.5% */
+.wrap-left {
+  left: 0;
+  clip-path: polygon(0 0, 36.5% 0, 34.5% 10%, 37.5% 20%, 33.5% 30%, 36.5% 40%, 34.5% 50%, 37.5% 60%, 33.5% 70%, 36.5% 80%, 34.5% 90%, 37.5% 100%, 0 100%);
+  z-index: 2002;
+  box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+}
+
+.wrap-right {
+  left: 0; /* Cover entire screen but clip the right half */
+  clip-path: polygon(36.5% 0, 100% 0, 100% 100%, 37.5% 100%, 33.5% 90%, 36.5% 80%, 32.5% 70%, 37.5% 60%, 34.5% 50%, 36.5% 40%, 33.5% 30%, 37.5% 20%, 34.5% 10%);
+  z-index: 2001;
+}
+
+.birthday-ribbon {
   position: absolute;
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100vh; /* each step is one viewport height for pacing */
+  height: 100vh;
+  object-fit: cover; /* Spans everything */
+  z-index: 2005;
+  pointer-events: none;
+  filter: drop-shadow(0 10px 30px rgba(0,0,0,0.8));
+}
+
+
+/* Interactive Station at Frame 192 */
+.interactive-boxes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  visibility: hidden; /* GSAP autoAlpha will handle this */
+  opacity: 0;
+  z-index: 50;
+}
+
+.box-container-relative {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+.clickable-box {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  cursor: pointer;
+  border-radius: 4px;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s ease-out;
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  background: #222; /* Fallback */
+}
+
+.clickable-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.clickable-box:hover {
+  transform: translate(-50%, -50%) scale(1.1) rotate(3deg);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+  filter: brightness(1.2);
+}
+
+/* Calculated offsets mimicking the 3D perspective of the wooden squares */
+.box-1 { top: -120px; left: -45px; }
+.box-2 { top: -35px;  left: 55px; }
+.box-3 { top: 45px;   left: -45px; }
+.box-4 { top: 125px;  left: 55px; }
+
+/* Gallery Overlay (Years & Photos) */
+.gallery-overlay {
+  position: absolute;
+  top: 80%;
+  left: 50%;
+  transform: translate(-50%,10%);
+  text-align: center;
+  z-index: 60;
+  width: 100vw;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#gallery-year {
+  font-family: 'Grained-Demo', sans-serif;
+  font-weight: 900;
+  font-size: 9rem;
+  margin: 0;
+  
+  /* Reversed Colors: Pink text with Green 3D depth */
+  color: #f199d1;
+  
+  text-shadow: 
+    0 1px 0 #19271d,
+    0 2px 0 #19271d,
+    0 3px 0 #19271d,
+    0 4px 0 #209441,  
+    0 5px 0 #209441,
+    0 6px 0 #1d2765,
+    0 7px 0 #1d2765,
+    0 8px 1px rgba(72, 60, 60, 0.658),
+    0 0 10px rgba(39, 169, 82, 0.5),
+    0 10px 20px rgba(0,0,0,0.5);
+  
+  transition: transform 0.3s ease;
+}
+
+#gallery-year:hover {
+  transform: scale(1.05) rotate(-2deg);
+}
+
+.gallery-photo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: auto;
+  margin: 0 auto;
+  padding: 0;
+  background: none;
+  border: none;
+  backdrop-filter: none;
+  box-shadow: none;
+  overflow: visible;
+  transition: all 0.5s ease;
+  z-index: 10;
+}
+
+/* Dual Portrait Layout Wrapper (2026) */
+.gallery-photo-container.is-dual {
+  gap: 60px;
+  margin-top: 20px;
+}
+
+/* Base Frame Container (Anchor) */
+.photo-box-placeholder {
+  position: relative;
+  height: 65vh; /* Increased from 55vh for impactful single portrait shots */
+  width: auto;
+  aspect-ratio: 1 / 1; /* Both frames are square assets */
+  box-sizing: border-box;
+  padding: 0;
+  border: none;
+  background: none;
+  z-index: 1; 
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,0.6));
+}
+
+/* Photo Layer (Layer 1 - Bottom) */
+.photo-box-placeholder::before {
+  content: "";
+  position: absolute;
+  background-image: var(--photo-url);
+  background-size: cover;
+  background-position: center 20%;
+  background-repeat: no-repeat;
+  z-index: 1; /* Under the frame overlay */
+}
+
+/* Frame Overlay Layer (Layer 2 - TOP) */
+.photo-box-placeholder::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 2; /* FORCE OVER THE PHOTO */
+  pointer-events: none;
+}
+
+.gallery-photo-container.is-dual .photo-box-placeholder {
+  background: none;
+}
+
+.gallery-photo-container.is-portrait .photo-box-placeholder::after,
+.gallery-photo-container.is-dual .photo-box-placeholder::after {
+  background-image: url('/pics/p-frame.png');
+}
+
+.gallery-photo-container.is-portrait .photo-box-placeholder::before,
+.gallery-photo-container.is-dual .photo-box-placeholder::before {
+  left: 21%; /* Original: 32.7% - Shifting left internally to use more space */
+  top: 11.3%;
+  width: 57%; /* Expanded to fill the internal window */
+  height: 60%;
+}
+
+/* Fullscreen Box Overlay (Frame 192) */
+.box-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  z-index: 2000; /* High above everything */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.box-overlay.show {
+  opacity: 1;
+}
+
+.overlay-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer; /* Click to advance step 2 */
+}
+
+.overlay-content img {
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+}
+
+#overlay-text {
+  color: #fff;
+  font-family: 'Grained-Demo', sans-serif !important;
+  font-size: 3.5rem;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  text-align: center;
+  text-shadow: 0 5px 20px rgba(0,0,0,1);
+}
+
+.overlay-close {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  color: #fff;
+  font-size: 3rem;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.3s;
+  z-index: 10;
+}
+
+.overlay-close:hover {
+  opacity: 1;
+}
+
+/* Zoom Controls (Right Side) */
+.zoom-controls {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
   flex-direction: column;
-  opacity: 0; 
+  gap: 20px;
+  z-index: 20;
+}
+
+.zoom-controls button {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.zoom-controls button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.15);
+  box-shadow: 0 8px 25px rgba(255,255,255,0.2);
+}
+
+.zoom-controls button:active {
+  transform: scale(0.95);
+}
+
+/* Music Integration (Box 3) */
+.music-container {
+  display: flex;
+  gap: 50px;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.song-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.song-card:hover {
+  transform: translateY(-15px) scale(1.05);
+}
+
+.song-cover {
+  width: 250px;
+  height: 250px;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: box-shadow 0.4s ease;
+}
+
+.song-card:hover .song-cover {
+  box-shadow: 0 25px 50px rgba(255,255,255,0.2);
+}
+
+/* Placeholder Gradients for Album Art (Replace with real images if needed) */
+.cover-1 {
+  background-image: url('https://img.youtube.com/vi/kugYXtEpMeM/maxresdefault.jpg');
+}
+
+.cover-2 {
+  background-image: url('https://img.youtube.com/vi/A8-IhZ627Fo/maxresdefault.jpg');
+}
+
+.song-title {
+  color: #fff;
+  font-family: 'Grained-Demo', sans-serif !important;
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  text-shadow: 0 5px 15px rgba(0,0,0,0.9);
+  margin: 0;
   text-align: center;
 }
 
-.step-1 {
-  opacity: 1; /* First one visible initially */
+.music-container:not(.hidden) {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 
-.step h1 {
-  font-size: 4rem;
+.music-heading {
+  color: #fff;
+  font-family: 'Grained-Demo', sans-serif !important;
+  font-size: 2.5rem;
+  letter-spacing: 3px;
+  text-shadow: 0 5px 15px rgba(0,0,0,0.9);
   margin: 0;
-  text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+  text-align: center;
 }
 
-.step h2 {
-  font-size: 3rem;
-  margin: 0;
-  text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+/* Embedded Iframe Player */
+#iframe-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100vw;
+  max-width: 1000px; /* Increased for a bigger player */
 }
+
+#player-frame-wrapper {
+  width: 100%;
+  max-width: 1000px; /* Increased for a bigger player */
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #111;
+}
+
+#player-frame-wrapper iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+#back-to-songs {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: 'Grained-Demo', sans-serif !important;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+#back-to-songs:hover {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1);
+}
+
+.gallery-photo-container.is-landscape .photo-box-placeholder,
+.gallery-photo-container.is-landscape-4-3 .photo-box-placeholder {
+  background: none;
+  height: 70vh; /* Increased from 55vh for more cinematic landscape shots */
+}
+
+.gallery-photo-container.is-landscape .photo-box-placeholder::after,
+.gallery-photo-container.is-landscape-4-3 .photo-box-placeholder::after {
+  background-image: url('/pics/l-frame.png');
+}
+
+.gallery-photo-container.is-landscape .photo-box-placeholder::before,
+.gallery-photo-container.is-landscape-4-3 .photo-box-placeholder::before {
+  left: 8.7%;
+  top: 25.46%;
+  width: 84.1%;
+  height: 48.26%;
+}
+
+/* Final adjustments for Dual mode height (2026 Finale) */
+.gallery-photo-container.is-dual .photo-box-placeholder {
+  height: 65vh; /* Larger dual-frame experience */
+  flex: none;
+}
+
+/* Final CTA Overlay (Frame 959) */
+.final-cta {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  visibility: hidden;
+  opacity: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.final-cta.show {
+  pointer-events: auto;
+}
+
+.cta-wrapper {
+  position: relative;
+  width: 550px;
+  height: 550px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Premium Atmospheric Backdrop: Blur + Soft Vignette */
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.4) 0%, transparent 75%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 50%;
+}
+
+.circular-text-svg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  margin: -275px 0 0 -275px; /* Half of 550px to center perfectly */
+  /* fill is set to url(#pinkHighlight) in HTML */
+  font-family: 'Grained-Demo', sans-serif;
+  font-weight: 500;
+  font-size: 26px;
+  letter-spacing: 12px;
+  text-transform: uppercase;
+  animation: rotateText 60s linear infinite;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.5));
+  pointer-events: none;
+}
+
+@keyframes rotateText {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.yes-btn {
+  position: relative;
+  z-index: 10;
+  padding: 20px 65px;
+  font-size: 2.5rem;
+  font-weight: 400;
+  font-family: 'Grained-Demo', sans-serif;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.4); /* DARK Glassmorphism for visibility */
+  backdrop-filter: blur(15px) saturate(150%);
+  -webkit-backdrop-filter: blur(15px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.4); /* Crisp Light border */
+  border-radius: 100px;
+  cursor: pointer;
+  box-shadow: 
+    0 20px 60px rgba(0,0,0,0.4), 
+    inset 0 0 20px rgba(255,255,255,0.1);
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  text-transform: uppercase;
+  letter-spacing: 6px;
+  animation: breathingDarkGlow 5s ease-in-out infinite;
+}
+
+@keyframes breathingDarkGlow {
+  0% { box-shadow: 0 20px 60px rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.4); }
+  50% { box-shadow: 0 20px 80px rgba(0,0,0,0.6), 0 0 15px rgba(212,175,55,0.2); border-color: rgba(255,255,255,0.8); }
+  100% { box-shadow: 0 20px 60px rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.4); }
+}
+
+.yes-btn:hover {
+  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #fff;
+  color: #fff;
+  box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+}
+
+/* Immersive Story Overlay */
+.story-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000; /* Absolute darkness */
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  box-sizing: border-box;
+  text-align: center;
+  transition: opacity 2s ease-in-out;
+}
+
+.story-content {
+  max-width: 900px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  align-items: center;
+}
+
+.story-text {
+  font-family: 'Grained-Demo', sans-serif !important;
+  color: #fff;
+  font-size: 2.2rem;
+  line-height: 1.6;
+  font-weight: 300;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  margin: 0;
+  min-height: 250px; /* Prevent layout jump */
+}
+
+.click-prompt {
+  font-family: 'Grained-Demo', sans-serif !important;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.2rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: 20px;
+  animation: breatheFade 3s ease-in-out infinite;
+}
+
+.story-footer {
+  margin-top: 30px;
+}
+
+.sit-down-btn {
+  padding: 20px 60px;
+  font-family: 'Grained-Demo', sans-serif !important;
+  font-size: 2.2rem;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 100px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 5px;
+  transition: all 0.5s ease;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+}
+
+.sit-down-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #fff;
+  box-shadow: 0 0 50px rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+@keyframes breatheFade {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.6; }
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Cinematic Eye Reveal Finale */
+.final-scene {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  z-index: 9998; /* Just below story overlay */
+  overflow: hidden;
+}
+
+.burning-video, .blowout-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.burning-video {
+  filter: blur(10px); /* Initial blur when eyes are closed/opening */
+  transition: filter 3s ease, opacity 1s ease;
+}
+
+.blowout-video {
+  opacity: 0;
+  transition: opacity 1s ease;
+  z-index: 2; /* Sits above burning video when active */
+}
+
+/* Final Reveal Picture */
+.final-pic {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  z-index: 3; /* Sits above blowout video when active */
+}
+
+/* Desktop Blowout Button */
+.blowout-btn {
+  position: absolute;
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 15px 40px;
+  font-family: 'Grained-Demo', sans-serif !important;
+  font-size: 1.8rem;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.242);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgb(251, 255, 0);
+  border-radius: 50px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  transition: all 0.4s ease;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+  animation: breatheFade 3s ease-in-out infinite;
+}
+
+.blowout-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: #fff;
+  box-shadow: 0 0 40px rgba(255, 255, 255, 0.3);
+  transform: translateX(-50%) scale(1.05);
+  animation: none;
+}
+
+/* Read Letters Button (Bottom Right) */
+.read-letters-btn {
+  position: absolute;
+  bottom: 40px;
+  right: 40px;
+  z-index: 101; /* Above almost everything */
+  padding: 12px 30px;
+  font-family: 'Grained-Demo', sans-serif !important;
+  font-size: 1.2rem;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  transition: all 0.4s ease;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.read-letters-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: #fff;
+  box-shadow: 0 5px 25px rgba(255, 255, 255, 0.2);
+  transform: translateY(-5px);
+}
+
+/* Final Speech Bubble Overlay */
+.speech-bubble {
+  position: absolute;
+  top: 15%; /* Just above the head in the provided image */
+  left: 70%;
+  /* transform: translateX(-50%); */
+  z-index: 100; /* Above EVERYTHING in final scene */
+  background: rgba(221, 219, 219, 0.295);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px; /* Shorter radius for a tighter look */
+  padding: 12px 24px;   /* Previously 20 40 - significantly tighter */
+  color: #fff;
+  text-align: center;
+  max-width: 350px;     /* Concrete max-width for better control */
+  box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+  opacity: 0; /* Animated in via GSAP */
+}
+
+/* Speech Bubble Tail */
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -15px; /* Adjust to point downwards */
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 15px 15px 0;
+  border-style: solid;
+  border-color: rgba(20, 20, 20, 0.75) transparent transparent transparent;
+  display: block;
+  width: 0;
+}
+
+.speech-bubble p {
+  margin: 0;
+  font-size: 1.25rem; /* Previously 1.8rem - much cleaner */
+  line-height: 1.4;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
+
+.eyelid {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50vh;
+  background: #000;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.eyelid.top {
+  top: 0;
+  clip-path: ellipse(150% 100% at 50% 100%);
+}
+
+.eyelid.bottom {
+  bottom: 0;
+  clip-path: ellipse(150% 100% at 50% 0%);
+}
+
