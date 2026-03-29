@@ -5,12 +5,13 @@ export class FramePreloader {
   loading: Set<number> = new Set();
   
   // High-priority caching window (immediate scroll vicinity)
-  windowSize = 150; 
+  windowSize = 120; 
   stickyFrames: Set<number> = new Set();
 
   private backgroundPointer = 0;
-  private maxBackgroundConcurrency = 3;
+  private maxBackgroundConcurrency = 1; // Strict limit to prevent saturation
   private lastWindowFrame = -1;
+  private isBackgroundActive = false;
 
   constructor(totalFrames: number, framePath: (index: number) => string) {
     this.totalFrames = totalFrames;
@@ -24,25 +25,42 @@ export class FramePreloader {
     this.loadFrame(0);
     this.loadFrame(totalFrames - 1);
 
-    // Initial buffer: Load the first 60 frames immediately for a smooth start
-    for (let i = 1; i < 60; i++) {
+    // Load initial 30 frames for immediate start
+    for (let i = 1; i < 30; i++) {
        this.loadFrame(i);
     }
-
-    // Kick off background preloading with a slight delay to allow UI to breathe
-    setTimeout(() => this.backgroundFill(), 2000);
   }
 
-  // Sequentially fills the cache in the background
-  private async backgroundFill() {
-    while (this.backgroundPointer < this.totalFrames) {
-      if (this.loading.size < this.maxBackgroundConcurrency && !this.cache.has(this.backgroundPointer)) {
-        this.loadFrame(this.backgroundPointer);
+  // Starts the background preloading process (call this after intro)
+  startBackgroundPreload() {
+    if (this.isBackgroundActive) return;
+    this.isBackgroundActive = true;
+    this.backgroundFill();
+  }
+
+  // Sequentially fills the cache in the background using requestIdleCallback
+  private backgroundFill() {
+    const fill = () => {
+      if (!this.isBackgroundActive) return;
+
+      if (this.loading.size < this.maxBackgroundConcurrency && this.backgroundPointer < this.totalFrames) {
+        if (!this.cache.has(this.backgroundPointer)) {
+          this.loadFrame(this.backgroundPointer);
+        }
         this.backgroundPointer++;
       }
-      // Wait a tiny bit between checks to not block the main thread
-      await new Promise(r => setTimeout(r, 50));
-    }
+
+      if (this.backgroundPointer < this.totalFrames) {
+        // Use requestIdleCallback if available, fallback to a healthy delay
+        if ('requestIdleCallback' in window) {
+          (window as any).requestIdleCallback(fill, { timeout: 2000 });
+        } else {
+          setTimeout(fill, 200);
+        }
+      }
+    };
+
+    fill();
   }
 
   // Called on every scroll tick or regularly to update the window

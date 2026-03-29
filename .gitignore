@@ -1,14 +1,43 @@
+# Local agent/tooling folders
 .agent/
 .gemini/
 .gsd/
+
+# Project-specific local docs/scripts/assets
 adapters/
 docs/
 scripts/
-PROJECT_RULES.md
-GSD-STYLE.md
-model_capabilities.yaml
-node_modules/
-frames/
-public/pics/*
 public/frames/
-.vercel
+public/pics/
+deploy-frames.ps1
+GSD-STYLE.md
+PROJECT_RULES.md
+model_capabilities.yaml
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Deployment and local platform state
+.vercel/
+.wrangler/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Editor / OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

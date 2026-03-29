@@ -10,10 +10,12 @@ gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 const TOTAL_FRAMES = 960; // Configured based on user specs
 // Frame path format assumes frames are in public/frames/ named frame_0001.webp etc.
 // Adjust this function based on the actual file naming!
+const FRAMES_CDN = 'https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev';
 const getFramePath = (index: number) => {
-  // Add 1 because GSAP animates from 0-959 but files are 0001-0960
+  // Load frames from separate CDN origin (domain sharding) to prevent
+  // bandwidth contention with pics and other assets
   const paddedIndex = (index + 1).toString().padStart(4, '0');
-  return `/frames/frame_${paddedIndex}.webp`;
+  return `${FRAMES_CDN}/frame_${paddedIndex}.webp`;
 };
 
 const preloader = new FramePreloader(TOTAL_FRAMES, getFramePath);
@@ -21,61 +23,6 @@ const renderer = new CanvasRenderer('hero-lightpass');
 
 // Object to hold the current frame index for GSAP to animate
 const playhead = { frame: 0 };
-
-// --- Birthday Countdown Logic ---
-const TARGET_DATE = new Date("2026-03-29T00:00:00+05:30").getTime();
-let countdownInterval: number | null = null;
-
-async function getServerTime(): Promise<number> {
-  try {
-    // Fetching from a reliable time API to prevent local clock cheating
-    const response = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
-    const data = await response.json();
-    return new Date(data.utc_datetime).getTime();
-  } catch (err) {
-    console.warn("Could not fetch server time, falling back to system time.", err);
-    return Date.now();
-  }
-}
-
-function updateCountdownDisplay(ms: number) {
-  const d = Math.floor(ms / (1000 * 60 * 60 * 24));
-  const h = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-  const s = Math.floor((ms % (1000 * 60)) / 1000);
-
-  const daysEl = document.getElementById('days');
-  const hoursEl = document.getElementById('hours');
-  const minsEl = document.getElementById('minutes');
-  const secsEl = document.getElementById('seconds');
-
-  if (daysEl) daysEl.innerText = d.toString().padStart(2, '0');
-  if (hoursEl) hoursEl.innerText = h.toString().padStart(2, '0');
-  if (minsEl) minsEl.innerText = m.toString().padStart(2, '0');
-  if (secsEl) secsEl.innerText = s.toString().padStart(2, '0');
-}
-
-async function startCountdownSequence() {
-  const overlay = document.getElementById('countdown-overlay');
-  if (!overlay) return;
-
-  overlay.classList.remove('hidden');
-  
-  const tick = async () => {
-    const now = await getServerTime();
-    const remaining = TARGET_DATE - now;
-
-    if (remaining <= 0) {
-      if (countdownInterval) clearInterval(countdownInterval);
-      unlockGallery();
-    } else {
-      updateCountdownDisplay(remaining);
-    }
-  };
-
-  await tick();
-  countdownInterval = window.setInterval(tick, 1000);
-}
 
 async function startIntroNarration() {
   if (isIntroStarted) return;
@@ -97,6 +44,10 @@ async function startIntroNarration() {
 
   const finalUnlock = () => {
     introOverlay.removeEventListener('click', finalUnlock);
+    
+    // Start background preloading now that the UI is cleared
+    preloader.startBackgroundPreload();
+
     gsap.to(introOverlay, {
       opacity: 0,
       duration: 1.5,
@@ -111,23 +62,6 @@ async function startIntroNarration() {
   introOverlay.addEventListener('click', finalUnlock);
 }
 
-function unlockGallery() {
-  const countdownOverlay = document.getElementById('countdown-overlay');
-  const wrap = document.getElementById('birthday-wrap');
-  
-  // Fade out existing overlays then start intro
-  gsap.to([countdownOverlay, wrap], {
-    opacity: 0,
-    duration: 1.5,
-    ease: "power2.inOut",
-    onComplete: () => {
-      if (countdownOverlay) countdownOverlay.style.display = 'none';
-      if (wrap) wrap.style.display = 'none';
-      startIntroNarration();
-    }
-  });
-}
-
 // --- Initial Birthday Wrap Logic ---
 document.body.style.overflow = 'hidden';
 const wrap = document.getElementById('birthday-wrap');
@@ -139,37 +73,33 @@ let isUnwrapping = false;
 let isIntroStarted = false;
 
 if (wrap && wrapLeft && wrapRight && ribbon) {
-  wrap.addEventListener('click', async () => {
+  wrap.addEventListener('click', () => {
     if (isUnwrapping) return;
     isUnwrapping = true;
 
-    // Check if we are already past the time immediately
-    const now = await getServerTime();
-
-    if (now >= TARGET_DATE) {
-       // Just unwrap normally
-       const tl = gsap.timeline({ onComplete: unlockGallery });
-       tl.to(ribbon, { opacity: 0, scale: 1.5, rotate: 5, duration: 1, ease: "power2.in" });
-       tl.to(wrapLeft, { xPercent: -100, rotate: -10, duration: 2.5, ease: "power2.inOut" }, "-=0.5");
-       tl.to(wrapRight, { xPercent: 100, rotate: 10, duration: 2.5, ease: "power2.inOut" }, "<");
-    } else {
-       const tl = gsap.timeline({ onComplete: () => { startCountdownSequence(); } });
-       tl.to(ribbon, { opacity: 0, scale: 1.5, rotate: 5, duration: 1, ease: "power2.in" });
-       tl.to(wrapLeft, { xPercent: -100, rotate: -10, duration: 2.5, ease: "power2.inOut" }, "-=0.5");
-       tl.to(wrapRight, { xPercent: 100, rotate: 10, duration: 2.5, ease: "power2.inOut" }, "<");
-    }
+    // Just unwrap normally and start intro
+    const tl = gsap.timeline({ 
+      onComplete: () => {
+        if (wrap) wrap.style.display = 'none';
+        startIntroNarration();
+      } 
+    });
+    tl.to(ribbon, { opacity: 0, scale: 1.5, rotate: 5, duration: 1, ease: "power2.in" });
+    tl.to(wrapLeft, { xPercent: -100, rotate: -10, duration: 2.5, ease: "power2.inOut" }, "-=0.5");
+    tl.to(wrapRight, { xPercent: 100, rotate: 10, duration: 2.5, ease: "power2.inOut" }, "<");
+    tl.to(wrap, { opacity: 0, duration: 1.5, ease: "power2.inOut" }, "-=1.5");
   });
 }
 
 const galleryData: GalleryItem[] = [
-  { year: "2011", img: "/pics/2011.jpeg", orientation: "portrait" }, // Initial pass
-  { year: "2014", img: "/pics/2014.jpeg", orientation: "landscape" }, // Loop 1
-  { year: "2015", img: "/pics/2015.jpeg", orientation: "portrait" }, // Loop 2
-  { year: "2017", img: "/pics/2017.jpeg", orientation: "portrait" }, // Loop 3
-  { year: "2022", img: "/pics/2022.jpeg", orientation: "landscape-4-3" }, // Loop 4
-  { year: "2023", img: "/pics/2023.jpeg", orientation: "landscape" }, // Loop 5
-  { year: "2025", img: "/pics/2025.jpeg", orientation: "portrait" }, // Loop 6
-  { year: "2026", img: "/pics/2026.jpeg", img2: "/pics/2026_2.jpeg", isDual: true, orientation: "portrait" }, // Final Pass
+  { year: "2011", img: 'https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/2011.jpeg', orientation: "portrait" }, // Initial pass
+  { year: "2014", img: 'https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/2014.jpeg', orientation: "landscape" }, // Loop 1
+  { year: "2015", img: 'https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/2015.jpeg', orientation: "portrait" }, // Loop 2
+  { year: "2017", img: 'https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/2017.jpeg', orientation: "portrait" }, // Loop 3
+  { year: "2022", img: 'https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/2022.jpeg', orientation: "landscape-4-3" }, // Loop 4
+  { year: "2023", img: 'https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/2023.jpeg', orientation: "landscape" }, // Loop 5
+  { year: "2025", img: 'https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/2025.jpeg', orientation: "portrait" }, // Loop 6
+  { year: "2026", img: 'https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/2026.jpeg', img2: 'https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/2026_2.jpeg', isDual: true, orientation: "portrait" }, // Final Pass
 ];
 
 type GalleryItem = {
@@ -587,10 +517,10 @@ let overlayStep = 1; // 1: Cover, 2: Reveal
 let currentZoom = 1;
 
 const boxContentMap: any = {
-  1: { type: 'img', src: '/pics/bday.png' },
-  2: { type: 'img', src: '/pics/Wish.png' },
+  1: { type: 'img', src: 'https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/bday.png' },
+  2: { type: 'img', src: 'https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/Wish.png' },
   3: { type: 'music' }, // Integrated Music Player
-  4: { type: 'img', src: '/pics/last.png' }
+  4: { type: 'img', src: 'https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/last.png' }
 };
 
 function resetMusicView() {
@@ -640,7 +570,7 @@ function openBox(boxNum: number) {
   resetMusicView();
 
   // Reset to cover
-  overlayImg.src = "/pics/cover.png";
+  overlayImg.src = 'https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/cover.png';
   overlayImg.classList.remove("hidden");
   overlayText?.classList.add("hidden");
   overlayMusic?.classList.add("hidden");
@@ -806,4 +736,5 @@ async function startFinalNarration() {
   // Start first dialogue automatically
   advance();
 }
+
 

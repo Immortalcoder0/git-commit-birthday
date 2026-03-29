@@ -107,66 +107,7 @@ canvas {
 }
 
 
-/* Birthday Countdown Overlay */
-.countdown-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 1000; /* Behind wrap but above gallery initially */
-  background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  color: #fff;
-  font-family: 'Grained-Demo', sans-serif !important;
-  text-align: center;
-  transition: opacity 1s ease-in-out;
-}
 
-.countdown-title {
-  font-size: 2.5rem;
-  margin-bottom: 2rem;
-  letter-spacing: 5px;
-  text-transform: uppercase;
-  opacity: 0.8;
-}
-
-.countdown-timer {
-  display: flex;
-  gap: 2rem;
-}
-
-.time-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 100px;
-}
-
-.time-block span {
-  font-size: 5rem;
-  font-weight: bold;
-  line-height: 1;
-  text-shadow: 0 0 20px rgba(255,255,255,0.3);
-}
-
-.time-block label {
-  font-size: 1rem;
-  text-transform: uppercase;
-  margin-top: 0.5rem;
-  letter-spacing: 2px;
-  opacity: 0.5;
-}
-
-@media (max-width: 600px) {
-  .countdown-timer { gap: 1rem; }
-  .time-block { min-width: 60px; }
-  .time-block span { font-size: 3rem; }
-  .countdown-title { font-size: 1.5rem; }
-}
 .interactive-boxes {
   position: absolute;
   top: 0;
@@ -330,7 +271,7 @@ canvas {
 
 .gallery-photo-container.is-portrait .photo-box-placeholder::after,
 .gallery-photo-container.is-dual .photo-box-placeholder::after {
-  background-image: url('/pics/p-frame.png');
+  background-image: url('https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/p-frame.png');
 }
 
 .gallery-photo-container.is-portrait .photo-box-placeholder::before,
@@ -575,7 +516,7 @@ canvas {
 
 .gallery-photo-container.is-landscape .photo-box-placeholder::after,
 .gallery-photo-container.is-landscape-4-3 .photo-box-placeholder::after {
-  background-image: url('/pics/l-frame.png');
+  background-image: url('https://pub-e1de5c302b9440b48135fe45031fdd1f.r2.dev/pics/l-frame.png');
 }
 
 .gallery-photo-container.is-landscape .photo-box-placeholder::before,
@@ -975,4 +916,5 @@ canvas {
   bottom: 0;
   clip-path: ellipse(150% 100% at 50% 0%);
 }
+
 
